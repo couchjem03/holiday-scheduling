@@ -75,105 +75,110 @@
     <script>
         let score = 11;
 
-        function updateCheckmarkButtons() {
-            document.querySelectorAll('.checkmark').forEach(button => {
-                const points = parseInt(button.parentElement.querySelector('.date').textContent.split(' ')[0]);
-                button.disabled = points > score;
-            });
+function updateCheckmarkButtons() {
+    document.querySelectorAll('.checkmark').forEach(button => {
+        const points = parseInt(button.parentElement.querySelector('.date').textContent.split(' ')[0]);
+        button.disabled = points > score || button.disabled; // Ensure it stays disabled after the first click
+    });
+}
+
+// Function to handle the Checkmark button click
+document.querySelectorAll('.checkmark').forEach(button => {
+    button.addEventListener('click', () => {
+        const dateText = button.parentElement.querySelector('.date').textContent;
+        const points = parseInt(dateText.split(' ')[0]);
+
+        // Check if the user has enough points and the button is not already disabled
+        if (points <= score && !button.disabled) {
+            console.log('clicked');
+            // Decrease the score and update the display
+            score -= points;
+            document.getElementById('score').textContent = score;
+            button.dataset.points = points;
+
+            console.log('score decreased');
+            // Add the checked date to the list in the box
+            const listItem = document.createElement('li');
+            listItem.textContent = dateText;
+            listItem.dataset.date = dateText; // Store the date in data attribute for easy lookup
+            document.getElementById('checked-dates-list').appendChild(listItem);
+
+            console.log('added to list');
+            // Disable the checkmark and xmark buttons, enable the undo button
+            button.disabled = true;
+            button.parentElement.querySelector('.xmark').disabled = true;
+            button.parentElement.querySelector('.undo').dataset.action = 'undoCheckmark';
+            button.parentElement.querySelector('.undo').disabled = false;
+
+            // Update the state of all checkmark buttons
+            console.log('update time');
+            updateCheckmarkButtons();
+        }
+    });
+});
+
+// Function to handle the X button click
+document.querySelectorAll('.xmark').forEach(button => {
+    button.addEventListener('click', () => {
+        // Cross out the date
+        button.parentElement.querySelector('.date').style.textDecoration = 'line-through';
+
+        // Disable the checkmark, enable the undo button
+        button.parentElement.querySelector('.undo').dataset.action = 'undoXmark';
+        button.disabled = true;
+        button.parentElement.querySelector('.checkmark').disabled = true;
+        button.parentElement.querySelector('.undo').disabled = false;
+    });
+});
+
+// Function to handle the Undo button click
+document.querySelectorAll('.undo').forEach(button => {
+    button.addEventListener('click', () => {
+        const action = button.dataset.action;
+        const checkmarkButton = button.parentElement.querySelector('.checkmark');
+        const xmarkButton = button.parentElement.querySelector('.xmark');
+        const list = document.getElementById('checked-dates-list');
+
+        if (action === 'undoCheckmark') {
+            // Undo the point deduction
+            const points = parseInt(checkmarkButton.dataset.points);
+            score += points;
+            document.getElementById('score').textContent = score;
+
+            // Find and remove the specific list item matching the date
+            const dateText = button.parentElement.querySelector('.date').textContent;
+            const listItem = Array.from(list.children).find(item => item.dataset.date === dateText);
+            if (listItem) {
+                list.removeChild(listItem);
+            }
+
+            // Re-enable the checkmark and xmark buttons
+            checkmarkButton.disabled = false;
+            xmarkButton.disabled = false;
+
+            // Update the state of all checkmark buttons
+            updateCheckmarkButtons();
+        } else if (action === 'undoXmark') {
+            // Undo the cross out
+            button.parentElement.querySelector('.date').style.textDecoration = 'none';
+
+            // Re-enable the checkmark and xmark buttons
+            checkmarkButton.disabled = false;
+            xmarkButton.disabled = false;
         }
 
-        // Function to handle the Checkmark button click
-        document.querySelectorAll('.checkmark').forEach(button => {
-            button.addEventListener('click', () => {
-                const dateText = button.parentElement.querySelector('.date').textContent;
-                const points = parseInt(dateText.split(' ')[0]);
+        // Disable the undo button after it has been used
+        button.disabled = true;
+    });
+});
 
-                // Check if the user has enough points
-                if (points <= score && !button.disabled) {
-                    // Decrease the score and update the display
-                    score -= points;
-                    document.getElementById('score').textContent = score;
-                    button.dataset.points = points;
+// Initially disable all undo buttons and update checkmark buttons
+document.querySelectorAll('.undo').forEach(button => {
+    button.disabled = true;
+});
 
-                    // Add the checked date to the list in the box
-                    const listItem = document.createElement('li');
-                    listItem.textContent = dateText;
-                    listItem.dataset.date = dateText; // Store the date in data attribute for easy lookup
-                    document.getElementById('checked-dates-list').appendChild(listItem);
+updateCheckmarkButtons();
 
-                    // Disable the checkmark and xmark buttons, enable the undo button
-                    button.disabled = true;
-                    button.parentElement.querySelector('.xmark').disabled = true;
-                    button.parentElement.querySelector('.undo').dataset.action = 'undoCheckmark';
-                    button.parentElement.querySelector('.undo').disabled = false;
-
-                    // Update the state of all checkmark buttons
-                    updateCheckmarkButtons();
-                }
-            });
-        });
-
-        // Function to handle the X button click
-        document.querySelectorAll('.xmark').forEach(button => {
-            button.addEventListener('click', () => {
-                // Cross out the date
-                button.parentElement.querySelector('.date').style.textDecoration = 'line-through';
-
-                // Disable the checkmark, enable the undo button
-                button.parentElement.querySelector('.undo').dataset.action = 'undoXmark';
-                button.disabled = true;
-                button.parentElement.querySelector('.checkmark').disabled = true;
-                button.parentElement.querySelector('.undo').disabled = false;
-            });
-        });
-
-        // Function to handle the Undo button click
-        document.querySelectorAll('.undo').forEach(button => {
-            button.addEventListener('click', () => {
-                const action = button.dataset.action;
-                const checkmarkButton = button.parentElement.querySelector('.checkmark');
-                const xmarkButton = button.parentElement.querySelector('.xmark');
-                const list = document.getElementById('checked-dates-list');
-
-                if (action === 'undoCheckmark') {
-                    // Undo the point deduction
-                    const points = parseInt(checkmarkButton.dataset.points);
-                    score += points;
-                    document.getElementById('score').textContent = score;
-
-                    // Find and remove the specific list item matching the date
-                    const dateText = button.parentElement.querySelector('.date').textContent;
-                    const listItem = Array.from(list.children).find(item => item.dataset.date === dateText);
-                    if (listItem) {
-                        list.removeChild(listItem);
-                    }
-
-                    // Re-enable the checkmark and xmark buttons
-                    checkmarkButton.disabled = false;
-                    xmarkButton.disabled = false;
-
-                    // Update the state of all checkmark buttons
-                    updateCheckmarkButtons();
-                } else if (action === 'undoXmark') {
-                    // Undo the cross out
-                    button.parentElement.querySelector('.date').style.textDecoration = 'none';
-
-                    // Re-enable the checkmark and xmark buttons
-                    checkmarkButton.disabled = false;
-                    xmarkButton.disabled = false;
-                }
-
-                // Disable the undo button after it has been used
-                button.disabled = true;
-            });
-        });
-
-        // Initially disable all undo buttons and update checkmark buttons
-        document.querySelectorAll('.undo').forEach(button => {
-            button.disabled = true;
-        });
-
-        updateCheckmarkButtons();
     </script>
 </body>
 </html>
